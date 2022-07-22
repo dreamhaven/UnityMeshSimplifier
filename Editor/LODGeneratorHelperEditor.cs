@@ -38,6 +38,8 @@ namespace UnityMeshSimplifier.Editor
         private const string FadeModeFieldName = "fadeMode";
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
+        private const string LodGeneratorPresetFieldName = "lodGeneratorPreset";
+        private const string CustomizeSettingsFieldName = "customizeSettings";
         private const string SimplificationOptionsFieldName = "simplificationOptions";
         private const string SaveAssetsPathFieldName = "saveAssetsPath";
         private const string LevelsFieldName = "levels";
@@ -57,6 +59,8 @@ namespace UnityMeshSimplifier.Editor
         private SerializedProperty fadeModeProperty = null;
         private SerializedProperty animateCrossFadingProperty = null;
         private SerializedProperty autoCollectRenderersProperty = null;
+        private SerializedProperty lodGeneratorPresetProperty = null;
+        private SerializedProperty customizeSettingsProperty = null;
         private SerializedProperty simplificationOptionsProperty = null;
         private SerializedProperty saveAssetsPathProperty = null;
         private SerializedProperty levelsProperty = null;
@@ -85,6 +89,8 @@ namespace UnityMeshSimplifier.Editor
             fadeModeProperty = serializedObject.FindProperty(FadeModeFieldName);
             animateCrossFadingProperty = serializedObject.FindProperty(AnimateCrossFadingFieldName);
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
+            lodGeneratorPresetProperty = serializedObject.FindProperty(LodGeneratorPresetFieldName);
+            customizeSettingsProperty = serializedObject.FindProperty(CustomizeSettingsFieldName);
             simplificationOptionsProperty = serializedObject.FindProperty(SimplificationOptionsFieldName);
             saveAssetsPathProperty = serializedObject.FindProperty(SaveAssetsPathFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
@@ -128,17 +134,7 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawNotGeneratedView()
         {
-            EditorGUILayout.PropertyField(fadeModeProperty);
-            var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
-
-            bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
-            if (hasCrossFade)
-            {
-                EditorGUILayout.PropertyField(animateCrossFadingProperty);
-            }
-
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
-            DrawSimplificationOptions();
 
             bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
             if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
@@ -159,6 +155,28 @@ namespace UnityMeshSimplifier.Editor
                 }
             }
 
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == true);
+            {
+                EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.PropertyField(customizeSettingsProperty);
+
+            var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
+            bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
+            {
+                EditorGUILayout.PropertyField(fadeModeProperty);
+                if (hasCrossFade)
+                {
+                    EditorGUILayout.PropertyField(animateCrossFadingProperty);
+                }
+
+                DrawSimplificationOptions();
+            }
+            EditorGUI.EndDisabledGroup();
+
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)
             {
                 var newSettingsExpanded = new bool[levelsProperty.arraySize];
@@ -175,10 +193,14 @@ namespace UnityMeshSimplifier.Editor
                 DrawLevel(levelIndex, levelProperty, hasCrossFade);
             }
 
-            if (GUILayout.Button(createLevelButtonContent))
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             {
-                CreateLevel();
+                if (GUILayout.Button(createLevelButtonContent))
+                {
+                    CreateLevel();
+                }
             }
+            EditorGUI.EndDisabledGroup();
 
             if (GUILayout.Button(generateLODButtonContent))
             {
@@ -209,73 +231,78 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawLevel(int index, SerializedProperty levelProperty, bool hasCrossFade)
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
+            var renderersProperty = levelProperty.FindPropertyRelative(LevelRenderersFieldName);
 
-            var previousBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = removeColor;
-            if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(RemoveLevelButtonSize)))
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             {
-                DeleteLevel(index);
-            }
-            GUI.backgroundColor = previousBackgroundColor;
-            EditorGUILayout.EndHorizontal();
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
 
-            ++EditorGUI.indentLevel;
+                var previousBackgroundColor = GUI.backgroundColor;
+                GUI.backgroundColor = removeColor;
+                if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(RemoveLevelButtonSize)))
+                {
+                    DeleteLevel(index);
+                }
+                GUI.backgroundColor = previousBackgroundColor;
+                EditorGUILayout.EndHorizontal();
 
-            var screenRelativeHeightProperty = levelProperty.FindPropertyRelative(LevelScreenRelativeHeightFieldName);
-            EditorGUILayout.PropertyField(screenRelativeHeightProperty);
-
-            var qualityProperty = levelProperty.FindPropertyRelative(LevelQualityFieldName);
-            EditorGUILayout.PropertyField(qualityProperty);
-
-            bool animateCrossFading = (hasCrossFade ? animateCrossFadingProperty.boolValue : false);
-            settingsExpanded[index] = EditorGUILayout.Foldout(settingsExpanded[index], settingsContent);
-            if (settingsExpanded[index])
-            {
                 ++EditorGUI.indentLevel;
 
-                var combineMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineMeshesFieldName);
-                EditorGUILayout.PropertyField(combineMeshesProperty);
+                var screenRelativeHeightProperty = levelProperty.FindPropertyRelative(LevelScreenRelativeHeightFieldName);
+                EditorGUILayout.PropertyField(screenRelativeHeightProperty);
 
-                if (combineMeshesProperty.boolValue)
-                {
-                    var combineSubMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineSubMeshesFieldName);
-                    EditorGUILayout.PropertyField(combineSubMeshesProperty);
-                }
+                var qualityProperty = levelProperty.FindPropertyRelative(LevelQualityFieldName);
+                EditorGUILayout.PropertyField(qualityProperty);
 
-                var childProperties = levelProperty.GetChildProperties();
-                foreach (var childProperty in childProperties)
+                bool animateCrossFading = (hasCrossFade ? animateCrossFadingProperty.boolValue : false);
+                settingsExpanded[index] = EditorGUILayout.Foldout(settingsExpanded[index], settingsContent);
+                if (settingsExpanded[index])
                 {
-                    if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
-                        string.Equals(childProperty.name, LevelCombineMeshesFieldName) || string.Equals(childProperty.name, LevelCombineSubMeshesFieldName) ||
-                        string.Equals(childProperty.name, LevelRenderersFieldName))
+                    ++EditorGUI.indentLevel;
+
+                    var combineMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineMeshesFieldName);
+                    EditorGUILayout.PropertyField(combineMeshesProperty);
+
+                    if (combineMeshesProperty.boolValue)
                     {
-                        continue;
-                    }
-                    else if ((!hasCrossFade || !animateCrossFading) && string.Equals(childProperty.name, LevelFadeTransitionWidthFieldName))
-                    {
-                        continue;
+                        var combineSubMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineSubMeshesFieldName);
+                        EditorGUILayout.PropertyField(combineSubMeshesProperty);
                     }
 
-                    EditorGUILayout.PropertyField(childProperty, true);
+                    var childProperties = levelProperty.GetChildProperties();
+                    foreach (var childProperty in childProperties)
+                    {
+                        if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
+                            string.Equals(childProperty.name, LevelCombineMeshesFieldName) || string.Equals(childProperty.name, LevelCombineSubMeshesFieldName) ||
+                            string.Equals(childProperty.name, LevelRenderersFieldName))
+                        {
+                            continue;
+                        }
+                        else if ((!hasCrossFade || !animateCrossFading) && string.Equals(childProperty.name, LevelFadeTransitionWidthFieldName))
+                        {
+                            continue;
+                        }
+
+                        EditorGUILayout.PropertyField(childProperty, true);
+                    }
+
+                    --EditorGUI.indentLevel;
                 }
 
-                --EditorGUI.indentLevel;
-            }
-
-            // Remove any null renderers
-            var renderersProperty = levelProperty.FindPropertyRelative(LevelRenderersFieldName);
-            for (int rendererIndex = renderersProperty.arraySize - 1; rendererIndex >= 0; rendererIndex--)
-            {
-                var rendererProperty = renderersProperty.GetArrayElementAtIndex(rendererIndex);
-                var renderer = rendererProperty.objectReferenceValue as Renderer;
-                if (renderer == null)
+                // Remove any null renderers
+                for (int rendererIndex = renderersProperty.arraySize - 1; rendererIndex >= 0; rendererIndex--)
                 {
-                    renderersProperty.DeleteArrayElementAtIndex(rendererIndex);
+                    var rendererProperty = renderersProperty.GetArrayElementAtIndex(rendererIndex);
+                    var renderer = rendererProperty.objectReferenceValue as Renderer;
+                    if (renderer == null)
+                    {
+                        renderersProperty.DeleteArrayElementAtIndex(rendererIndex);
+                    }
                 }
             }
+            EditorGUI.EndDisabledGroup();
 
             bool autoCollectRenderers = autoCollectRenderersProperty.boolValue;
             if (!autoCollectRenderers)
@@ -631,7 +658,7 @@ namespace UnityMeshSimplifier.Editor
 
             if (prefabGameObjects.Any())
             {
-                EditorUtility.DisplayDialog("Invalid GameObjects", "Some objects are not children of the LODGenerator GameObject," + 
+                EditorUtility.DisplayDialog("Invalid GameObjects", "Some objects are not children of the LODGenerator GameObject," +
                     " as well as being part of a prefab. They will not be added.", "OK");
             }
 #endif
