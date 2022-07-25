@@ -75,7 +75,7 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets the LOD levels for this generator.
+        /// Gets or sets the LOD levels for this preset.
         /// </summary>
         public LODLevel[] Levels
         {

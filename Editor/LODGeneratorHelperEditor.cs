@@ -35,11 +35,11 @@ namespace UnityMeshSimplifier.Editor
     [CustomEditor(typeof(LODGeneratorHelper))]
     internal sealed class LODGeneratorHelperEditor : UnityEditor.Editor
     {
+        private const string LodGeneratorPresetFieldName = "lodGeneratorPreset";
+        private const string CustomizeSettingsFieldName = "customizeSettings";
         private const string FadeModeFieldName = "fadeMode";
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
-        private const string LodGeneratorPresetFieldName = "lodGeneratorPreset";
-        private const string CustomizeSettingsFieldName = "customizeSettings";
         private const string SimplificationOptionsFieldName = "simplificationOptions";
         private const string SaveAssetsPathFieldName = "saveAssetsPath";
         private const string LevelsFieldName = "levels";
@@ -56,11 +56,11 @@ namespace UnityMeshSimplifier.Editor
         private const float RendererButtonWidth = 60f;
         private const float RemoveRendererButtonSize = 20f;
 
+        private SerializedProperty lodGeneratorPresetProperty = null;
+        private SerializedProperty customizeSettingsProperty = null;
         private SerializedProperty fadeModeProperty = null;
         private SerializedProperty animateCrossFadingProperty = null;
         private SerializedProperty autoCollectRenderersProperty = null;
-        private SerializedProperty lodGeneratorPresetProperty = null;
-        private SerializedProperty customizeSettingsProperty = null;
         private SerializedProperty simplificationOptionsProperty = null;
         private SerializedProperty saveAssetsPathProperty = null;
         private SerializedProperty levelsProperty = null;
@@ -86,11 +86,11 @@ namespace UnityMeshSimplifier.Editor
 
         private void OnEnable()
         {
+            lodGeneratorPresetProperty = serializedObject.FindProperty(LodGeneratorPresetFieldName);
+            customizeSettingsProperty = serializedObject.FindProperty(CustomizeSettingsFieldName);
             fadeModeProperty = serializedObject.FindProperty(FadeModeFieldName);
             animateCrossFadingProperty = serializedObject.FindProperty(AnimateCrossFadingFieldName);
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
-            lodGeneratorPresetProperty = serializedObject.FindProperty(LodGeneratorPresetFieldName);
-            customizeSettingsProperty = serializedObject.FindProperty(CustomizeSettingsFieldName);
             simplificationOptionsProperty = serializedObject.FindProperty(SimplificationOptionsFieldName);
             saveAssetsPathProperty = serializedObject.FindProperty(SaveAssetsPathFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
@@ -163,18 +163,26 @@ namespace UnityMeshSimplifier.Editor
 
             EditorGUILayout.PropertyField(customizeSettingsProperty);
 
-            var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
-            bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             {
                 EditorGUILayout.PropertyField(fadeModeProperty);
+            }
+            EditorGUI.EndDisabledGroup();
+            var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
+
+            bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
+
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
+            {
                 if (hasCrossFade)
                 {
                     EditorGUILayout.PropertyField(animateCrossFadingProperty);
                 }
-
-                DrawSimplificationOptions();
             }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
+            DrawSimplificationOptions();
             EditorGUI.EndDisabledGroup();
 
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)

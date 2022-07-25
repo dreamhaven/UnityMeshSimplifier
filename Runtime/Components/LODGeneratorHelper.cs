@@ -25,7 +25,6 @@ SOFTWARE.
 #endregion
 
 using UnityEngine;
-using System.Linq;
 
 namespace UnityMeshSimplifier
 {
@@ -36,12 +35,6 @@ namespace UnityMeshSimplifier
     public sealed class LODGeneratorHelper : MonoBehaviour
     {
         #region Fields
-        [SerializeField, Tooltip("If the renderers under this game object and any children should be automatically collected.")]
-        private bool autoCollectRenderers = true;
-
-        [SerializeField, Tooltip("The path within the assets directory to save the generated assets. Leave this empty to use the default path.")]
-        private string saveAssetsPath = string.Empty;
-
         [SerializeField, Tooltip("The LOD Generator preset to use.")]
         private LODGeneratorPreset lodGeneratorPreset = null;
 
@@ -50,12 +43,17 @@ namespace UnityMeshSimplifier
 
         [SerializeField, Tooltip("The fade mode used by the created LOD group.")]
         private LODFadeMode fadeMode = LODFadeMode.None;
-
         [SerializeField, Tooltip("If the cross-fading should be animated by time.")]
         private bool animateCrossFading = false;
 
+        [SerializeField, Tooltip("If the renderers under this game object and any children should be automatically collected.")]
+        private bool autoCollectRenderers = true;
+
         [SerializeField, Tooltip("The simplification options.")]
         private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
+
+        [SerializeField, Tooltip("The path within the assets directory to save the generated assets. Leave this empty to use the default path.")]
+        private string saveAssetsPath = string.Empty;
 
         [SerializeField, Tooltip("The LOD levels.")]
         private LODLevel[] levels = null;
@@ -65,25 +63,6 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Properties
-        /// <summary>
-        /// Gets or sets if the renderers under this game object and any children should be automatically collected.
-        /// </summary>
-        public bool AutoCollectRenderers
-        {
-            get { return autoCollectRenderers; }
-            set { autoCollectRenderers = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the path within the project to save the generated assets.
-        /// Leave this empty to use the default path.
-        /// </summary>
-        public string SaveAssetsPath
-        {
-            get { return saveAssetsPath; }
-            set { saveAssetsPath = value; }
-        }
-
         /// <summary>
         /// Gets or sets a LOD generator preset. Presets can be used to drive simplification options and levels in a sharable way.
         /// </summary>
@@ -142,6 +121,15 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
+        /// Gets or sets if the renderers under this game object and any children should be automatically collected.
+        /// </summary>
+        public bool AutoCollectRenderers
+        {
+            get { return autoCollectRenderers; }
+            set { autoCollectRenderers = value; }
+        }
+
+        /// <summary>
         /// Gets or sets the simplification options.
         /// </summary>
         public SimplificationOptions SimplificationOptions
@@ -158,6 +146,16 @@ namespace UnityMeshSimplifier
                     WarnDisabledCustomization();
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets or sets the path within the project to save the generated assets.
+        /// Leave this empty to use the default path.
+        /// </summary>
+        public string SaveAssetsPath
+        {
+            get { return saveAssetsPath; }
+            set { saveAssetsPath = value; }
         }
 
         /// <summary>
@@ -241,17 +239,6 @@ namespace UnityMeshSimplifier
             {
                 levels[idx].Renderers = (Renderer[])previousLevels[idx].Renderers.Clone();
             }
-        }
-
-        /// <summary>
-        /// Gets whether preset-derived settings match the preset (a mismatch is possible if the preset asset is modified and settings aren't updated)
-        /// </summary>
-        public bool SettingsMatchPreset()
-        {
-            return fadeMode == lodGeneratorPreset.FadeMode &&
-                animateCrossFading == lodGeneratorPreset.AnimateCrossFading &&
-                simplificationOptions.Equals(lodGeneratorPreset.SimplificationOptions) &&
-                levels.SequenceEqual(lodGeneratorPreset.Levels);
         }
     }
 }
