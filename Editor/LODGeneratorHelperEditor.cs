@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -136,24 +137,29 @@ namespace UnityMeshSimplifier.Editor
         {
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
 
-            bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
-            if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
+            // TODO SECRET DOOR, NOT FOR PR. Don't show asset path since we override it
+            if (false)
             {
-                overrideSaveAssetsPath = newOverrideSaveAssetsPath;
-                saveAssetsPathProperty.stringValue = string.Empty;
-                serializedObject.ApplyModifiedProperties();
-                GUIUtility.ExitGUI();
-            }
-
-            if (overrideSaveAssetsPath)
-            {
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(saveAssetsPathProperty);
-                if (EditorGUI.EndChangeCheck())
+                bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
+                if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
                 {
-                    saveAssetsPathProperty.stringValue = IOUtils.MakeSafeRelativePath(saveAssetsPathProperty.stringValue);
+                    overrideSaveAssetsPath = newOverrideSaveAssetsPath;
+                    saveAssetsPathProperty.stringValue = string.Empty;
+                    serializedObject.ApplyModifiedProperties();
+                    GUIUtility.ExitGUI();
+                }
+
+                if (overrideSaveAssetsPath)
+                {
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(saveAssetsPathProperty);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        saveAssetsPathProperty.stringValue = IOUtils.MakeSafeRelativePath(saveAssetsPathProperty.stringValue);
+                    }
                 }
             }
+            // End TODO NOT FOR PR
 
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == true);
             {
@@ -544,6 +550,27 @@ namespace UnityMeshSimplifier.Editor
             try
             {
                 EditorUtility.DisplayProgressBar("Generating LODs", "Generating LODs...", 0f);
+                lodGeneratorHelper?.TryUpdateSettingsFromPreset();
+
+                // TODO: SECRET DOOR. NOT FOR PR. - set saveAssetsPath to next to prefab
+                {
+                    if (lodGeneratorHelper != null)
+                    {
+                        string prefabAssetPath = UnityEditor.SceneManagement.PrefabStageUtility
+                            .GetCurrentPrefabStage()
+                            ?.assetPath;
+                        if (prefabAssetPath != null)
+                        {
+                            // Strip Assets\ from root of path (LODGenerator re-appends it later)
+                            // And put in LODs\[prefab] subfolder
+                            string path = Path.GetDirectoryName(prefabAssetPath) + "\\LODs\\" + Path.GetFileNameWithoutExtension(prefabAssetPath);
+                            path = path.Substring(path.IndexOf("\\"));
+                            lodGeneratorHelper.SaveAssetsPath = path;
+                        }
+                    }
+                }
+                // End TODO: SECRET DOOR. NOT FOR PR.
+
                 var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
                 if (lodGroup != null)
                 {
