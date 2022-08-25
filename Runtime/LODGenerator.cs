@@ -26,6 +26,9 @@ SOFTWARE.
 
 using System.Collections.Generic;
 using System.Linq;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -141,6 +144,13 @@ namespace UnityMeshSimplifier
 
             saveAssetsPath = ValidateSaveAssetsPath(saveAssetsPath);
 
+#if UNITY_EDITOR
+            StaticEditorFlags baseStaticflags = GameObjectUtility.GetStaticEditorFlags(gameObject);
+            StaticEditorFlags lodStaticflags = baseStaticflags;
+            // Ensure lightbake-related flags are disabled for LODs, as they'll be overlaid on LOD0 instead.
+            lodStaticflags &= ~(StaticEditorFlags.ContributeGI | StaticEditorFlags.ReflectionProbeStatic);
+#endif
+
             var lodParentGameObject = new GameObject(LODParentGameObjectName);
             var lodParent = lodParentGameObject.transform;
             ParentAndResetTransform(lodParent, transform);
@@ -222,6 +232,21 @@ namespace UnityMeshSimplifier
                 }
 
                 lods[levelIndex] = new LOD(level.ScreenRelativeTransitionHeight, levelRenderers.ToArray());
+
+#if UNITY_EDITOR
+                foreach (Renderer renderer in levelRenderers)
+                {
+                    // Set static flags on levels
+                    GameObjectUtility.SetStaticEditorFlags(renderer.gameObject, levelIndex == 0 ? baseStaticflags : lodStaticflags);
+
+                    // If LOD0 is lightmapped, add follower component
+                    if (levelIndex != 0 && ((baseStaticflags & StaticEditorFlags.ContributeGI) != 0))
+                    {
+                        LightmappedLOD followerComponent = renderer.gameObject.AddComponent<LightmappedLOD>();
+                        followerComponent.m_lodGroup = lodGroup;
+                    }
+                }
+#endif
             }
 
             CreateBackup(gameObject, renderersToDisable.ToArray());
