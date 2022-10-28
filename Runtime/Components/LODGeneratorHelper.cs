@@ -240,7 +240,10 @@ namespace UnityMeshSimplifier
             int rendererCopyCount = Mathf.Min(levels.Length, previousLevels.Length);
             for(int idx = 0; idx < rendererCopyCount; idx++)
             {
-                levels[idx].Renderers = (Renderer[])previousLevels[idx].Renderers.Clone();
+                if (previousLevels[idx].Renderers != null)
+                {
+                    levels[idx].Renderers = (Renderer[])previousLevels[idx].Renderers.Clone();
+                }
             }
         }
     }
