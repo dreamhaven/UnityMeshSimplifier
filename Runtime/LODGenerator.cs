@@ -244,6 +244,8 @@ namespace UnityMeshSimplifier
                     {
                         LightmappedLOD followerComponent = renderer.gameObject.AddComponent<LightmappedLOD>();
                         followerComponent.m_lodGroup = lodGroup;
+                        // Blackrazor edit - assign renderer rather than picking it up on Awake()
+                        followerComponent.m_currentRenderer = renderer as MeshRenderer;
                     }
                 }
 #endif
