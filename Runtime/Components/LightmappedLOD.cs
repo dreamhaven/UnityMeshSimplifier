@@ -8,13 +8,17 @@ public class LightmappedLOD : MonoBehaviour
 {
 
     public LODGroup m_lodGroup;
-    
-    private MeshRenderer currentRenderer;
+    // Blackrazor edit - made renderer assignable in inspector
+    public MeshRenderer m_currentRenderer;
 
     // Get mesh renderer on host
     private void Awake()
     {
-        currentRenderer = gameObject.GetComponent<MeshRenderer>();
+        // Blackrazor edit - only get component if one wasn't assigned
+        if (m_currentRenderer == null)
+        {
+            m_currentRenderer = gameObject.GetComponent<MeshRenderer>();
+        }
         RendererInfoTransfer();
     }
 
@@ -29,7 +33,7 @@ public class LightmappedLOD : MonoBehaviour
 
     void RendererInfoTransfer()
     {
-        if (m_lodGroup == null || currentRenderer == null)
+        if (m_lodGroup == null || m_currentRenderer == null)
         {
             return;
         }
@@ -43,7 +47,7 @@ public class LightmappedLOD : MonoBehaviour
         {
             for (int j = 0; j < lods[i].renderers.Length; j++)
             {
-                if (currentRenderer == lods[i].renderers[j])
+                if (m_currentRenderer == lods[i].renderers[j])
                     currentRendererLodIndex = i;
             }
         }
@@ -63,9 +67,13 @@ public class LightmappedLOD : MonoBehaviour
                 {
                     renderers[i].lightProbeUsage = lods[0].renderers[i].lightProbeUsage;
                     renderers[i].lightmapIndex = lods[0].renderers[i].lightmapIndex;
-                    renderers[i].lightmapScaleOffset = lods[0].renderers[i].lightmapScaleOffset;
                     renderers[i].realtimeLightmapIndex = lods[0].renderers[i].realtimeLightmapIndex;
-                    renderers[i].realtimeLightmapScaleOffset = lods[0].renderers[i].realtimeLightmapScaleOffset;
+                    // Blackrazor edit - avoid attempting to set lightmap scale on static LODs, causes warning spam
+                    if (!renderers[i].isPartOfStaticBatch)
+                    {
+                        renderers[i].lightmapScaleOffset = lods[0].renderers[i].lightmapScaleOffset;
+                        renderers[i].realtimeLightmapScaleOffset = lods[0].renderers[i].realtimeLightmapScaleOffset;
+                    }
 
                 }
                 catch
