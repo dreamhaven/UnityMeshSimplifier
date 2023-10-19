@@ -43,8 +43,9 @@ namespace UnityMeshSimplifier
         /// <param name="renderers">The array of mesh renderers to combine.</param>
         /// <param name="resultMaterials">The resulting materials for the combined mesh.</param>
         /// <returns>The combined mesh.</returns>
-        public static Mesh CombineMeshes(Transform rootTransform, MeshRenderer[] renderers, out Material[] resultMaterials)
+        public static Mesh CombineMeshes(Transform rootTransform, MeshRenderer[] renderers, out Material[] resultMaterials, out uint combinedRenderingLayers)
         {
+            combinedRenderingLayers = 0;
             if (rootTransform == null)
                 throw new System.ArgumentNullException(nameof(rootTransform));
             else if (renderers == null)
@@ -72,6 +73,7 @@ namespace UnityMeshSimplifier
                 meshes[i] = meshFilter.sharedMesh;
                 transforms[i] = rootTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
                 materials[i] = renderer.sharedMaterials;
+                combinedRenderingLayers |= renderer.renderingLayerMask;
             }
 
             return CombineMeshes(meshes, transforms, materials, out resultMaterials);
@@ -85,8 +87,9 @@ namespace UnityMeshSimplifier
         /// <param name="resultMaterials">The resulting materials for the combined mesh.</param>
         /// <param name="resultBones">The resulting bones for the combined mesh.</param>
         /// <returns>The combined mesh.</returns>
-        public static Mesh CombineMeshes(Transform rootTransform, SkinnedMeshRenderer[] renderers, out Material[] resultMaterials, out Transform[] resultBones)
+        public static Mesh CombineMeshes(Transform rootTransform, SkinnedMeshRenderer[] renderers, out Material[] resultMaterials, out Transform[] resultBones, out uint combinedRenderingLayers)
         {
+            combinedRenderingLayers = 0;
             if (rootTransform == null)
                 throw new System.ArgumentNullException(nameof(rootTransform));
             else if (renderers == null)
@@ -112,6 +115,7 @@ namespace UnityMeshSimplifier
                 transforms[i] = rendererTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
                 materials[i] = renderer.sharedMaterials;
                 bones[i] = renderer.bones;
+                combinedRenderingLayers |= renderer.renderingLayerMask;
             }
 
             return CombineMeshes(meshes, transforms, materials, bones, out resultMaterials, out resultBones);
@@ -437,7 +441,7 @@ namespace UnityMeshSimplifier
 #if UNITY_EDITOR
         private static System.Reflection.MethodInfo meshCanAccessMethodInfo;
 
-        // This is a workaround for a Unity peculiarity - 
+        // This is a workaround for a Unity peculiarity -
         // non-readable meshes are actually always accessible from the Editor.
         // We're still logging a warning since this won't work in a build.
         private static bool CanReadMeshInEditor(Mesh mesh)

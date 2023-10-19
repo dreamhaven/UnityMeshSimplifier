@@ -71,6 +71,7 @@ namespace UnityMeshSimplifier
             public Material[] materials;
             public Transform rootBone;
             public Transform[] bones;
+            public uint renderingLayers;
         }
         #endregion
 
@@ -208,6 +209,7 @@ namespace UnityMeshSimplifier
                         {
                             var renderer = staticRenderers[rendererIndex];
                             var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, level, levelTransform, rendererIndex, renderer, simplificationOptions, saveAssetsPath);
+                            levelRenderer.renderingLayerMask = renderer.renderingLayers;
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -218,6 +220,7 @@ namespace UnityMeshSimplifier
                         {
                             var renderer = skinnedRenderers[rendererIndex];
                             var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, level, levelTransform, rendererIndex, renderer, simplificationOptions, saveAssetsPath);
+                            levelRenderer.renderingLayerMask = renderer.renderingLayers;
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -339,7 +342,8 @@ namespace UnityMeshSimplifier
                     isNewMesh = false,
                     transform = renderer.transform,
                     mesh = mesh,
-                    materials = renderer.sharedMaterials
+                    materials = renderer.sharedMaterials,
+                    renderingLayers = renderer.renderingLayerMask,
                 });
             }
             return newRenderers.ToArray();
@@ -368,7 +372,8 @@ namespace UnityMeshSimplifier
                     mesh = mesh,
                     materials = renderer.sharedMaterials,
                     rootBone = renderer.rootBone,
-                    bones = renderer.bones
+                    bones = renderer.bones,
+                    renderingLayers = renderer.renderingLayerMask,
                 });
             }
             return newRenderers.ToArray();
@@ -384,7 +389,8 @@ namespace UnityMeshSimplifier
             var newRenderers = new List<RendererInfo>(renderers.Length);
 
             Material[] combinedMaterials;
-            var combinedMesh = MeshCombiner.CombineMeshes(transform, renderers, out combinedMaterials);
+            uint combinedRenderingLayers;
+            var combinedMesh = MeshCombiner.CombineMeshes(transform, renderers, out combinedMaterials, out combinedRenderingLayers);
             combinedMesh.name = string.Format("{0}_static{1:00}", transform.name, levelIndex);
             string rendererName = string.Format("{0}_combined_static", transform.name);
             newRenderers.Add(new RendererInfo
@@ -396,7 +402,8 @@ namespace UnityMeshSimplifier
                 mesh = combinedMesh,
                 materials = combinedMaterials,
                 rootBone = null,
-                bones = null
+                bones = null,
+                renderingLayers = combinedRenderingLayers,
             });
 
             return newRenderers.ToArray();
@@ -438,7 +445,8 @@ namespace UnityMeshSimplifier
                     mesh = renderer.sharedMesh,
                     materials = renderer.sharedMaterials,
                     rootBone = renderer.rootBone,
-                    bones = renderer.bones
+                    bones = renderer.bones,
+                    renderingLayers = renderer.renderingLayerMask,
                 });
             }
 
@@ -446,7 +454,8 @@ namespace UnityMeshSimplifier
             {
                 Material[] combinedMaterials;
                 Transform[] combinedBones;
-                var combinedMesh = MeshCombiner.CombineMeshes(transform, combineRenderers, out combinedMaterials, out combinedBones);
+                uint combinedRenderingLayers;
+                var combinedMesh = MeshCombiner.CombineMeshes(transform, combineRenderers, out combinedMaterials, out combinedBones, out combinedRenderingLayers);
                 combinedMesh.name = string.Format("{0}_skinned{1:00}", transform.name, levelIndex);
 
                 var rootBone = FindBestRootBone(transform, combineRenderers);
@@ -460,7 +469,8 @@ namespace UnityMeshSimplifier
                     mesh = combinedMesh,
                     materials = combinedMaterials,
                     rootBone = rootBone,
-                    bones = combinedBones
+                    bones = combinedBones,
+                    renderingLayers = combinedRenderingLayers,
                 });
             }
 
