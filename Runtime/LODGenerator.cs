@@ -149,7 +149,9 @@ namespace UnityMeshSimplifier
             StaticEditorFlags baseStaticflags = GameObjectUtility.GetStaticEditorFlags(gameObject);
             StaticEditorFlags lodStaticflags = baseStaticflags;
             // Ensure lightbake-related flags are disabled for LODs, as they'll be overlaid on LOD0 instead.
-            lodStaticflags &= ~(StaticEditorFlags.ContributeGI | StaticEditorFlags.ReflectionProbeStatic);
+            // Blackrazor edit - ensure LODs aren't statically batched, so that we can copy lightmap UV offsets from LOD0 at runtime
+            //lodStaticflags &= ~(StaticEditorFlags.ContributeGI | StaticEditorFlags.ReflectionProbeStatic);
+            lodStaticflags &= ~(StaticEditorFlags.ContributeGI | StaticEditorFlags.ReflectionProbeStatic | StaticEditorFlags.BatchingStatic);
 #endif
 
             var lodParentGameObject = new GameObject(LODParentGameObjectName);
