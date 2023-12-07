@@ -31,7 +31,8 @@ public class LightmappedLOD : MonoBehaviour
     }
 #endif
 
-    void RendererInfoTransfer()
+    // Blackrazor Edit - make public so we can call this after Bakery ftLightmapsStorage initialization (which potentially happens after our Awake())
+    public void RendererInfoTransfer()
     {
         if (m_lodGroup == null || m_currentRenderer == null)
         {
