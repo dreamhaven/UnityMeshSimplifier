@@ -14,20 +14,21 @@ public class LightmappedLOD : MonoBehaviour
     // Get mesh renderer on host
     private void Awake()
     {
-        // Blackrazor edit - only get component if one wasn't assigned
+        // Blackrazor edit - only get component if one wasn't assigned, and DON'T transfer info at runtime (we transfer at bake time)
         if (m_currentRenderer == null)
         {
             m_currentRenderer = gameObject.GetComponent<MeshRenderer>();
         }
-        RendererInfoTransfer();
+        //RendererInfoTransfer();
     }
 
     // In editor evaluate RendererInfoTransfer() each time there is a LOD switch
 #if UNITY_EDITOR
     void OnBecameVisible()
     {
-        if(!Application.isPlaying)
-            RendererInfoTransfer();
+        // Blackrazor edit - DON'T transfer info at edit time (we transfer at bake time)
+        //if(!Application.isPlaying)
+        //    RendererInfoTransfer();
     }
 #endif
 
