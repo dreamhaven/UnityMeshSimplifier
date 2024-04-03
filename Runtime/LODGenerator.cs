@@ -503,6 +503,8 @@ namespace UnityMeshSimplifier
             if (level.Quality < 1f)
             {
                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+                // Blackrazor Edit - Disable read/write on generated LOD meshes
+                mesh.UploadMeshData(true);
 
 #if UNITY_EDITOR
                 SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, mesh.name, saveAssetsPath);
