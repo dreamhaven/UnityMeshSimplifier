@@ -503,7 +503,8 @@ namespace UnityMeshSimplifier
             if (level.Quality < 1f)
             {
                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                // Blackrazor Edit - Disable read/write on generated LOD meshes
+                // Blackrazor Edit - Name and disable read/write on generated LOD meshes
+                mesh.name = renderer.mesh.name;
                 mesh.UploadMeshData(true);
 
 #if UNITY_EDITOR
@@ -742,7 +743,8 @@ namespace UnityMeshSimplifier
             gameObjectName = IOUtils.MakeSafeFileName(gameObjectName);
             rendererName = IOUtils.MakeSafeFileName(rendererName);
             meshName = IOUtils.MakeSafeFileName(meshName);
-            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
+            // Blackrazor Edit - Better LOD mesh name
+            meshName = string.Format("{1}_LOD_{0:00}", levelIndex, meshName);
 
             string finalSaveAssetsPath = GetFinalSaveAssetsPath(gameObjectName, rendererName, saveAssetsPath);
             string saveAssetPath = string.Format("{0}/{1}.mesh", finalSaveAssetsPath, meshName);
