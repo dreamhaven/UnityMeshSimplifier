@@ -29,7 +29,7 @@ using UnityEngine;
 namespace UnityMeshSimplifier
 {
     [AddComponentMenu("")]
-    internal class LODBackupComponent : MonoBehaviour
+    public class LODBackupComponent : MonoBehaviour
     {
         [SerializeField]
         private Renderer[] originalRenderers = null;
